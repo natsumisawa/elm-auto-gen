@@ -1,8 +1,13 @@
 module Main exposing (main)
 
 import Browser
+import Element exposing (..)
+import Element.Background as Background
+import Element.Font as Font
+import Element.Input
+import Form.Decoder as Decoder exposing (Decoder)
 import Html exposing (Html, a, h1, img, li, main_, section, text, ul)
-import Html.Attributes exposing (href, src, target)
+import Html.Attributes exposing (href, src, style, target)
 
 
 main : Program () Model Msg
@@ -20,13 +25,15 @@ main =
 
 
 type alias Model =
-    { userState : String
+    { text : String
+    , textForm : String
+    , errorMessageMaybe : Maybe String
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model ""
+    ( Model "" "" Nothing
     , Cmd.none
     )
 
@@ -36,14 +43,46 @@ init _ =
 
 
 type Msg
-    = NoOp
+    = ChangeText String
+    | ConvertText
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        { text, textForm } =
+            model
+    in
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
+        ChangeText input ->
+            ( { model | textForm = input }, Cmd.none )
+
+        ConvertText ->
+            case Decoder.run decoder textForm of
+                Ok t ->
+                    ( { model | text = t }, Cmd.none )
+
+                Err err ->
+                    ( { model | errorMessageMaybe = toErrorMessage err }, Cmd.none )
+
+
+type Error
+    = TextEmpty
+
+
+toErrorMessage : List Error -> Maybe String
+toErrorMessage errorList =
+    if List.member TextEmpty errorList then
+        Just "未入力です"
+
+    else
+        Nothing
+
+
+decoder : Decoder String Error String
+decoder =
+    Decoder.identity
+        |> Decoder.assert (Decoder.minLength TextEmpty 1)
 
 
 
@@ -52,38 +91,56 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    main_
-        []
-        [ section []
-            [ h1 [] [ text "Elm official..." ]
-            , ul []
-                [ li []
-                    [ a [ href "https://elm-lang.org", target "_blank" ]
-                        [ text "Elm - A delightful language for reliable webapps" ]
-                    ]
-                , li []
-                    [ a [ href "https://guide.elm-lang.org", target "_blank" ]
-                        [ text "Introduction · An Introduction to Elm" ]
-                    ]
-                ]
-            ]
-        , section []
-            [ h1 [] [ text "Community in Japan" ]
-            , ul []
-                [ li []
-                    [ a [ href "https://elm-lang.jp", target "_blank" ]
-                        [ text "Elm-jp" ]
-                    ]
-                , li []
-                    [ a [ href "https://guide.elm-lang.jp", target "_blank" ]
-                        [ text "はじめに · An Introduction to Elm" ]
-                    ]
-                , li []
-                    [ a [ href "http://jinjor-labo.hatenablog.com/entry/2019/02/26/112019", target "_blank" ]
-                        [ text "『基礎からわかる Elm』（Author's post）" ]
-                    ]
-                ]
-            ]
+    Element.layout [] <|
+        Element.column
+            []
+        <|
+            [ Element.table [ padding 10, spacing 30 ]
+                { data = [ model ]
+                , columns =
+                    [ { header = Element.text ""
+                      , width = px 300
+                      , view =
+                            \m ->
+                                Element.column [ spacing 10 ] <|
+                                    List.append
+                                        [ Element.Input.text
+                                            [ width <| px 100
+                                            , htmlAttribute <| Html.Attributes.autofocus True
+                                            ]
+                                            { onChange = ChangeText
+                                            , text = model.textForm
+                                            , placeholder = Nothing
+                                            , label = Element.Input.labelHidden "text"
+                                            }
+                                        ]
+                                        (case model.errorMessageMaybe of
+                                            Just em ->
+                                                [ Element.el [ Font.color (Element.rgb 255 0 0), Font.size 12 ] (Element.text em) ]
 
-        -- , img [ src "./assets/images/Elm_logo.png" ] []
-        ]
+                                            Nothing ->
+                                                []
+                                        )
+                      }
+                    , { header = Element.text "Json"
+                      , width = px 300
+                      , view =
+                            \m ->
+                                Element.column [ spacing 10 ]
+                                    [ Element.text
+                                        model.text
+                                    ]
+                      }
+                    ]
+                }
+            , el [ centerX ] <|
+                Element.Input.button
+                    [ Background.color <| Element.rgb255 102 102 255
+                    , padding 5
+                    , Element.focused
+                        [ Background.color <| Element.rgb255 102 102 255 ]
+                    ]
+                    { onPress = Just ConvertText
+                    , label = Element.text "Convert"
+                    }
+            ]
