@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Array
 import Browser
 import Element exposing (..)
 import Element.Background as Background
@@ -8,6 +9,7 @@ import Element.Input
 import Form.Decoder as Decoder exposing (Decoder)
 import Html exposing (Html, a, h1, img, li, main_, section, text, ul)
 import Html.Attributes exposing (href, src, style, target)
+import List.Extra as ListExtra
 
 
 main : Program () Model Msg
@@ -25,15 +27,15 @@ main =
 
 
 type alias Model =
-    { text : String
-    , textForm : String
+    { textJson : String
+    , textForm : List String
     , errorMessageMaybe : Maybe String
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model "" "" Nothing
+    ( Model "" [ "" ] Nothing
     , Cmd.none
     )
 
@@ -43,31 +45,48 @@ init _ =
 
 
 type Msg
-    = ChangeText String
+    = ChangeText String Int
     | ConvertText
+    | AddInput Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        { text, textForm } =
+        { textJson, textForm } =
             model
     in
     case msg of
-        ChangeText input ->
-            ( { model | textForm = input }, Cmd.none )
+        ChangeText input index ->
+            ( { model | textForm = ListExtra.setAt index input textForm }, Cmd.none )
 
         ConvertText ->
-            case Decoder.run decoder textForm of
-                Ok t ->
-                    ( { model | text = t }, Cmd.none )
+            case Decoder.run (Decoder.array decoder) <| Array.fromList textForm of
+                Ok textList ->
+                    ( { model | textJson = convertToJson <| Array.toList textList }, Cmd.none )
 
                 Err err ->
                     ( { model | errorMessageMaybe = toErrorMessage err }, Cmd.none )
 
+        AddInput index ->
+            ( { model | textForm = List.append textForm [ "" ] }, Cmd.none )
+
 
 type Error
     = TextEmpty
+
+
+convertToJson : List String -> String
+convertToJson textList =
+    let
+        jsonObjList =
+            List.map
+                (\text ->
+                    "\"" ++ text ++ "\" -> ???.asJson,"
+                )
+                textList
+    in
+    "Json.obj(\n\t" ++ String.concat jsonObjList ++ "\n)"
 
 
 toErrorMessage : List Error -> Maybe String
@@ -91,6 +110,10 @@ decoder =
 
 view : Model -> Html Msg
 view model =
+    let
+        { textJson, textForm, errorMessageMaybe } =
+            model
+    in
     Element.layout [] <|
         Element.column
             []
@@ -104,17 +127,21 @@ view model =
                             \m ->
                                 Element.column [ spacing 10 ] <|
                                     List.append
-                                        [ Element.Input.text
-                                            [ width <| px 100
-                                            , htmlAttribute <| Html.Attributes.autofocus True
-                                            ]
-                                            { onChange = ChangeText
-                                            , text = model.textForm
-                                            , placeholder = Nothing
-                                            , label = Element.Input.labelHidden "text"
-                                            }
-                                        ]
-                                        (case model.errorMessageMaybe of
+                                        (List.indexedMap
+                                            (\index textFormElement ->
+                                                Element.Input.text
+                                                    [ width <| px 100
+                                                    , htmlAttribute <| Html.Attributes.autofocus True
+                                                    ]
+                                                    { onChange = \i -> ChangeText i index
+                                                    , text = textFormElement
+                                                    , placeholder = Nothing
+                                                    , label = Element.Input.labelHidden "text"
+                                                    }
+                                            )
+                                            textForm
+                                        )
+                                        (case errorMessageMaybe of
                                             Just em ->
                                                 [ Element.el [ Font.color (Element.rgb 255 0 0), Font.size 12 ] (Element.text em) ]
 
@@ -128,7 +155,7 @@ view model =
                             \m ->
                                 Element.column [ spacing 10 ]
                                     [ Element.text
-                                        model.text
+                                        textJson
                                     ]
                       }
                     ]
