@@ -92,7 +92,7 @@ convertToJson textList =
 toErrorMessage : List Error -> Maybe String
 toErrorMessage errorList =
     if List.member TextEmpty errorList then
-        Just "未入力です"
+        Just "未入力のフォームがあります"
 
     else
         Nothing
@@ -115,47 +115,41 @@ view model =
             model
     in
     Element.layout [] <|
-        Element.column
+        column
             []
         <|
-            [ Element.indexedTable [ padding 10, spacing 30 ]
-                { data = textFormList
-                , columns =
-                    [ { header = Element.text ""
-                      , width = px 300
-                      , view =
-                            \index textForm ->
-                                Element.column [ spacing 10 ] <|
-                                    [ inputView textForm
-                                        index
-                                    , errorMessageView errorMessageMaybe
-                                    ]
-                      }
-                    , { header = Element.text "Json"
-                      , width = px 300
-                      , view =
-                            \index textForm ->
-                                if index == 0 then
-                                    Element.column [ spacing 10 ]
-                                        [ Element.text
-                                            textJson
-                                        ]
-
-                                else
-                                    Element.none
-                      }
-                    ]
-                }
-            , el [ centerX ] <|
-                Element.Input.button
-                    [ Background.color <| Element.rgb255 102 102 255
-                    , padding 5
-                    , Element.focused
-                        [ Background.color <| Element.rgb255 102 102 255 ]
-                    ]
-                    { onPress = Just <| AddInput (List.length textFormList + 1)
-                    , label = Element.text "AddInput"
-                    }
+            [ row [ padding 10 ]
+                [ el [] <|
+                    column [ spacing 10 ]
+                        [ indexedTable [ padding 10, spacing 30 ]
+                            { data = textFormList
+                            , columns =
+                                [ { header = Element.text ""
+                                  , width = px 300
+                                  , view =
+                                        \index textForm ->
+                                            column [ spacing 10 ] <|
+                                                [ inputView textForm
+                                                    index
+                                                ]
+                                  }
+                                ]
+                            }
+                        , Element.Input.button
+                            [ Background.color <| Element.rgb255 102 102 255
+                            , padding 5
+                            , Element.focused
+                                [ Background.color <| Element.rgb255 102 102 255 ]
+                            ]
+                            { onPress = Just <| AddInput (List.length textFormList + 1)
+                            , label = Element.text "AddInput"
+                            }
+                        , errorMessageView errorMessageMaybe
+                        ]
+                , el [] <|
+                    Element.text
+                        textJson
+                ]
             , el [ centerX ] <|
                 Element.Input.button
                     [ Background.color <| Element.rgb255 102 102 255

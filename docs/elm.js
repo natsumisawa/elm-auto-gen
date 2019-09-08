@@ -5252,7 +5252,7 @@ var elm$core$List$member = F2(
 			xs);
 	});
 var author$project$Main$toErrorMessage = function (errorList) {
-	return A2(elm$core$List$member, author$project$Main$TextEmpty, errorList) ? elm$core$Maybe$Just('未入力です') : elm$core$Maybe$Nothing;
+	return A2(elm$core$List$member, author$project$Main$TextEmpty, errorList) ? elm$core$Maybe$Just('未入力のフォームがあります') : elm$core$Maybe$Nothing;
 };
 var elm$core$List$append = F2(
 	function (xs, ys) {
@@ -12796,6 +12796,24 @@ var mdgriffith$elm_ui$Element$rgb255 = F3(
 	function (red, green, blue) {
 		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, red / 255, green / 255, blue / 255, 1);
 	});
+var mdgriffith$elm_ui$Element$row = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asRow,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
 var elm$html$Html$Attributes$disabled = elm$html$Html$Attributes$boolProperty('disabled');
 var elm$html$Html$Attributes$tabindex = function (n) {
 	return A2(
@@ -12927,77 +12945,81 @@ var author$project$Main$view = function (model) {
 			_List_fromArray(
 				[
 					A2(
-					mdgriffith$elm_ui$Element$indexedTable,
+					mdgriffith$elm_ui$Element$row,
 					_List_fromArray(
 						[
-							mdgriffith$elm_ui$Element$padding(10),
-							mdgriffith$elm_ui$Element$spacing(30)
+							mdgriffith$elm_ui$Element$padding(10)
 						]),
-					{
-						columns: _List_fromArray(
-							[
-								{
-								header: mdgriffith$elm_ui$Element$text(''),
-								view: F2(
-									function (index, textForm) {
-										return A2(
-											mdgriffith$elm_ui$Element$column,
-											_List_fromArray(
-												[
-													mdgriffith$elm_ui$Element$spacing(10)
-												]),
-											_List_fromArray(
-												[
-													A2(author$project$Main$inputView, textForm, index),
-													author$project$Main$errorMessageView(errorMessageMaybe)
-												]));
-									}),
-								width: mdgriffith$elm_ui$Element$px(300)
-							},
-								{
-								header: mdgriffith$elm_ui$Element$text('Json'),
-								view: F2(
-									function (index, textForm) {
-										return (!index) ? A2(
-											mdgriffith$elm_ui$Element$column,
-											_List_fromArray(
-												[
-													mdgriffith$elm_ui$Element$spacing(10)
-												]),
-											_List_fromArray(
-												[
-													mdgriffith$elm_ui$Element$text(textJson)
-												])) : mdgriffith$elm_ui$Element$none;
-									}),
-								width: mdgriffith$elm_ui$Element$px(300)
-							}
-							]),
-						data: textFormList
-					}),
-					A2(
-					mdgriffith$elm_ui$Element$el,
 					_List_fromArray(
-						[mdgriffith$elm_ui$Element$centerX]),
-					A2(
-						mdgriffith$elm_ui$Element$Input$button,
-						_List_fromArray(
-							[
-								mdgriffith$elm_ui$Element$Background$color(
-								A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255)),
-								mdgriffith$elm_ui$Element$padding(5),
-								mdgriffith$elm_ui$Element$focused(
+						[
+							A2(
+							mdgriffith$elm_ui$Element$el,
+							_List_Nil,
+							A2(
+								mdgriffith$elm_ui$Element$column,
 								_List_fromArray(
 									[
-										mdgriffith$elm_ui$Element$Background$color(
-										A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255))
-									]))
-							]),
-						{
-							label: mdgriffith$elm_ui$Element$text('AddInput'),
-							onPress: elm$core$Maybe$Just(
-								author$project$Main$AddInput(
-									elm$core$List$length(textFormList) + 1))
-						})),
+										mdgriffith$elm_ui$Element$spacing(10)
+									]),
+								_List_fromArray(
+									[
+										A2(
+										mdgriffith$elm_ui$Element$indexedTable,
+										_List_fromArray(
+											[
+												mdgriffith$elm_ui$Element$padding(10),
+												mdgriffith$elm_ui$Element$spacing(30)
+											]),
+										{
+											columns: _List_fromArray(
+												[
+													{
+													header: mdgriffith$elm_ui$Element$text(''),
+													view: F2(
+														function (index, textForm) {
+															return A2(
+																mdgriffith$elm_ui$Element$column,
+																_List_fromArray(
+																	[
+																		mdgriffith$elm_ui$Element$spacing(10)
+																	]),
+																_List_fromArray(
+																	[
+																		A2(author$project$Main$inputView, textForm, index)
+																	]));
+														}),
+													width: mdgriffith$elm_ui$Element$px(300)
+												}
+												]),
+											data: textFormList
+										}),
+										A2(
+										mdgriffith$elm_ui$Element$Input$button,
+										_List_fromArray(
+											[
+												mdgriffith$elm_ui$Element$Background$color(
+												A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255)),
+												mdgriffith$elm_ui$Element$padding(5),
+												mdgriffith$elm_ui$Element$focused(
+												_List_fromArray(
+													[
+														mdgriffith$elm_ui$Element$Background$color(
+														A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255))
+													]))
+											]),
+										{
+											label: mdgriffith$elm_ui$Element$text('AddInput'),
+											onPress: elm$core$Maybe$Just(
+												author$project$Main$AddInput(
+													elm$core$List$length(textFormList) + 1))
+										}),
+										author$project$Main$errorMessageView(errorMessageMaybe)
+									]))),
+							A2(
+							mdgriffith$elm_ui$Element$el,
+							_List_Nil,
+							mdgriffith$elm_ui$Element$text(textJson))
+						])),
 					A2(
 					mdgriffith$elm_ui$Element$el,
 					_List_fromArray(
