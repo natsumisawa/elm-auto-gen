@@ -115,52 +115,39 @@ view model =
             model
     in
     Element.layout [] <|
-        column
-            []
-        <|
-            [ row [ padding 10 ]
-                [ el [] <|
-                    column [ spacing 10 ]
-                        [ indexedTable [ padding 10, spacing 30 ]
-                            { data = textFormList
-                            , columns =
-                                [ { header = Element.text ""
-                                  , width = px 300
-                                  , view =
-                                        \index textForm ->
-                                            column [ spacing 10 ] <|
-                                                [ inputView textForm
-                                                    index
-                                                ]
-                                  }
-                                ]
-                            }
-                        , Element.Input.button
-                            [ Background.color <| Element.rgb255 102 102 255
-                            , padding 5
-                            , Element.focused
-                                [ Background.color <| Element.rgb255 102 102 255 ]
+        column [] <|
+            [ el [ centerX ] <|
+                row [ padding 10 ]
+                    [ el [] <|
+                        column [ spacing 10 ]
+                            [ inputTableView textFormList
+                            , addButtonView <| List.length textFormList + 1
+                            , errorMessageView errorMessageMaybe
                             ]
-                            { onPress = Just <| AddInput (List.length textFormList + 1)
-                            , label = Element.text "AddInput"
-                            }
-                        , errorMessageView errorMessageMaybe
-                        ]
-                , el [] <|
-                    Element.text
-                        textJson
-                ]
-            , el [ centerX ] <|
-                Element.Input.button
-                    [ Background.color <| Element.rgb255 102 102 255
-                    , padding 5
-                    , Element.focused
-                        [ Background.color <| Element.rgb255 102 102 255 ]
+                    , el [] <|
+                        Element.text
+                            textJson
                     ]
-                    { onPress = Just ConvertText
-                    , label = Element.text "Convert"
-                    }
+            , el [ centerX ] convertButtonView
             ]
+
+
+inputTableView : List String -> Element Msg
+inputTableView textFormList =
+    indexedTable [ padding 10, spacing 30 ]
+        { data = textFormList
+        , columns =
+            [ { header = Element.text ""
+              , width = px 300
+              , view =
+                    \index textForm ->
+                        column [ spacing 10 ] <|
+                            [ inputView textForm
+                                index
+                            ]
+              }
+            ]
+        }
 
 
 inputView : String -> Int -> Element Msg
@@ -176,6 +163,19 @@ inputView textForm index =
         }
 
 
+addButtonView : Int -> Element Msg
+addButtonView nextIndex =
+    Element.Input.button
+        [ Background.color <| Element.rgb255 102 102 255
+        , padding 5
+        , Element.focused
+            [ Background.color <| Element.rgb255 102 102 255 ]
+        ]
+        { onPress = Just <| AddInput nextIndex
+        , label = Element.text "AddInput"
+        }
+
+
 errorMessageView : Maybe String -> Element Msg
 errorMessageView errorMessageMaybe =
     case errorMessageMaybe of
@@ -184,3 +184,16 @@ errorMessageView errorMessageMaybe =
 
         Nothing ->
             Element.none
+
+
+convertButtonView : Element Msg
+convertButtonView =
+    Element.Input.button
+        [ Background.color <| Element.rgb255 102 102 255
+        , padding 5
+        , Element.focused
+            [ Background.color <| Element.rgb255 102 102 255 ]
+        ]
+        { onPress = Just ConvertText
+        , label = Element.text "Convert"
+        }
