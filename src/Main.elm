@@ -55,7 +55,7 @@ type Msg
     = ChangeText String Int
     | ConvertText
     | AddInput Int
-    | AddNestedInput Int (Maybe Int)
+    | AddNestedInput Int Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -88,8 +88,8 @@ update msg model =
         AddInput nextIndex ->
             ( { model | textFormList = List.append textFormList [ TextForm "" nextIndex Nothing ] }, Cmd.none )
 
-        AddNestedInput nextIndex parentIndexMaybe ->
-            ( { model | textFormList = List.append textFormList [ TextForm "" nextIndex parentIndexMaybe ] }, Cmd.none )
+        AddNestedInput nextIndex parentIndex ->
+            ( { model | textFormList = List.append textFormList [ TextForm "" nextIndex (Just parentIndex) ] }, Cmd.none )
 
 
 type Error
@@ -160,13 +160,29 @@ inputTableView textFormList =
               , width = px 300
               , view =
                     \index textForm ->
-                        row [ spacing 10 ] <|
-                            inputView textForm.text
-                                index
+                        column [ spacing 10 ] <|
+                            (case textForm.parentIndexMaybe of
+                                Just parentIndex ->
+                                    el [ alignRight ] <|
+                                        inputView textForm.text
+                                            index
+
+                                Nothing ->
+                                    el [ alignLeft ] <|
+                                        inputView textForm.text
+                                            index
+                            )
                                 :: (if List.length textFormList == index + 1 then
-                                        [ addNestedButtonView (index + 1) textForm.parentIndexMaybe
-                                        , addButtonView (index + 1)
-                                        ]
+                                        case textForm.parentIndexMaybe of
+                                            Just parentIndex ->
+                                                [ el [ centerX ] <| addButtonView (index + 1)
+                                                , el [ centerX ] <| addNestedButtonView (index + 1) parentIndex
+                                                ]
+
+                                            Nothing ->
+                                                [ el [ centerX ] <| addNestedButtonView (index + 1) index
+                                                , el [ centerX ] <| addButtonView (index + 1)
+                                                ]
 
                                     else
                                         []
@@ -179,7 +195,7 @@ inputTableView textFormList =
 inputView : String -> Int -> Element Msg
 inputView text index =
     Element.Input.text
-        [ width <| px 100
+        [ width <| px 150
         , htmlAttribute <| Html.Attributes.autofocus True
         ]
         { onChange = \i -> ChangeText i index
@@ -202,15 +218,15 @@ addButtonView nextIndex =
         }
 
 
-addNestedButtonView : Int -> Maybe Int -> Element Msg
-addNestedButtonView nextIndex parentIndexMaybe =
+addNestedButtonView : Int -> Int -> Element Msg
+addNestedButtonView nextIndex parentIndex =
     Element.Input.button
         [ Background.color <| Element.rgb255 102 102 255
         , padding 5
         , Element.focused
             [ Background.color <| Element.rgb255 102 102 255 ]
         ]
-        { onPress = Just <| AddNestedInput nextIndex parentIndexMaybe
+        { onPress = Just <| AddNestedInput nextIndex parentIndex
         , label = Element.text "AddNestedInput"
         }
 

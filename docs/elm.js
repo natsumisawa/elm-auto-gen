@@ -5537,7 +5537,7 @@ var author$project$Main$update = F2(
 					elm$core$Platform$Cmd$none);
 			default:
 				var nextIndex = msg.a;
-				var parentIndexMaybe = msg.b;
+				var parentIndex = msg.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -5547,7 +5547,11 @@ var author$project$Main$update = F2(
 								textFormList,
 								_List_fromArray(
 									[
-										A3(author$project$Main$TextForm, '', nextIndex, parentIndexMaybe)
+										A3(
+										author$project$Main$TextForm,
+										'',
+										nextIndex,
+										elm$core$Maybe$Just(parentIndex))
 									]))
 						}),
 					elm$core$Platform$Cmd$none);
@@ -11554,7 +11558,7 @@ var author$project$Main$AddNestedInput = F2(
 		return {$: 'AddNestedInput', a: a, b: b};
 	});
 var author$project$Main$addNestedButtonView = F2(
-	function (nextIndex, parentIndexMaybe) {
+	function (nextIndex, parentIndex) {
 		return A2(
 			mdgriffith$elm_ui$Element$Input$button,
 			_List_fromArray(
@@ -11572,7 +11576,7 @@ var author$project$Main$addNestedButtonView = F2(
 			{
 				label: mdgriffith$elm_ui$Element$text('AddNestedInput'),
 				onPress: elm$core$Maybe$Just(
-					A2(author$project$Main$AddNestedInput, nextIndex, parentIndexMaybe))
+					A2(author$project$Main$AddNestedInput, nextIndex, parentIndex))
 			});
 	});
 var author$project$Main$ChangeText = F2(
@@ -12516,7 +12520,7 @@ var author$project$Main$inputView = F2(
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$width(
-					mdgriffith$elm_ui$Element$px(100)),
+					mdgriffith$elm_ui$Element$px(150)),
 					mdgriffith$elm_ui$Element$htmlAttribute(
 					elm$html$Html$Attributes$autofocus(true))
 				]),
@@ -12528,6 +12532,30 @@ var author$project$Main$inputView = F2(
 				placeholder: elm$core$Maybe$Nothing,
 				text: text
 			});
+	});
+var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
+var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
+var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
+var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
+var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
+var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
+var mdgriffith$elm_ui$Element$column = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asColumn,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentTop + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentLeft)),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
 var mdgriffith$elm_ui$Element$InternalIndexedColumn = function (a) {
 	return {$: 'InternalIndexedColumn', a: a};
@@ -12753,24 +12781,6 @@ var mdgriffith$elm_ui$Element$indexedTable = F2(
 				data: config.data
 			});
 	});
-var mdgriffith$elm_ui$Element$row = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asRow,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
 var author$project$Main$inputTableView = function (textFormList) {
 	return A2(
 		mdgriffith$elm_ui$Element$indexedTable,
@@ -12787,21 +12797,69 @@ var author$project$Main$inputTableView = function (textFormList) {
 					view: F2(
 						function (index, textForm) {
 							return A2(
-								mdgriffith$elm_ui$Element$row,
+								mdgriffith$elm_ui$Element$column,
 								_List_fromArray(
 									[
 										mdgriffith$elm_ui$Element$spacing(10)
 									]),
 								A2(
 									elm$core$List$cons,
-									A2(author$project$Main$inputView, textForm.text, index),
-									_Utils_eq(
-										elm$core$List$length(textFormList),
-										index + 1) ? _List_fromArray(
-										[
-											A2(author$project$Main$addNestedButtonView, index + 1, textForm.parentIndexMaybe),
-											author$project$Main$addButtonView(index + 1)
-										]) : _List_Nil));
+									function () {
+										var _n0 = textForm.parentIndexMaybe;
+										if (_n0.$ === 'Just') {
+											var parentIndex = _n0.a;
+											return A2(
+												mdgriffith$elm_ui$Element$el,
+												_List_fromArray(
+													[mdgriffith$elm_ui$Element$alignRight]),
+												A2(author$project$Main$inputView, textForm.text, index));
+										} else {
+											return A2(
+												mdgriffith$elm_ui$Element$el,
+												_List_fromArray(
+													[mdgriffith$elm_ui$Element$alignLeft]),
+												A2(author$project$Main$inputView, textForm.text, index));
+										}
+									}(),
+									function () {
+										if (_Utils_eq(
+											elm$core$List$length(textFormList),
+											index + 1)) {
+											var _n1 = textForm.parentIndexMaybe;
+											if (_n1.$ === 'Just') {
+												var parentIndex = _n1.a;
+												return _List_fromArray(
+													[
+														A2(
+														mdgriffith$elm_ui$Element$el,
+														_List_fromArray(
+															[mdgriffith$elm_ui$Element$centerX]),
+														author$project$Main$addButtonView(index + 1)),
+														A2(
+														mdgriffith$elm_ui$Element$el,
+														_List_fromArray(
+															[mdgriffith$elm_ui$Element$centerX]),
+														A2(author$project$Main$addNestedButtonView, index + 1, parentIndex))
+													]);
+											} else {
+												return _List_fromArray(
+													[
+														A2(
+														mdgriffith$elm_ui$Element$el,
+														_List_fromArray(
+															[mdgriffith$elm_ui$Element$centerX]),
+														A2(author$project$Main$addNestedButtonView, index + 1, index)),
+														A2(
+														mdgriffith$elm_ui$Element$el,
+														_List_fromArray(
+															[mdgriffith$elm_ui$Element$centerX]),
+														author$project$Main$addButtonView(index + 1))
+													]);
+											}
+										} else {
+											return _List_Nil;
+										}
+									}()));
 						}),
 					width: mdgriffith$elm_ui$Element$px(300)
 				}
@@ -12809,26 +12867,6 @@ var author$project$Main$inputTableView = function (textFormList) {
 			data: textFormList
 		});
 };
-var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
-var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
-var mdgriffith$elm_ui$Element$column = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asColumn,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentTop + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentLeft)),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
 var mdgriffith$elm_ui$Internal$Model$OnlyDynamic = F2(
 	function (a, b) {
 		return {$: 'OnlyDynamic', a: a, b: b};
@@ -13081,6 +13119,24 @@ var mdgriffith$elm_ui$Element$layoutWith = F3(
 	});
 var mdgriffith$elm_ui$Element$layout = mdgriffith$elm_ui$Element$layoutWith(
 	{options: _List_Nil});
+var mdgriffith$elm_ui$Element$row = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asRow,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
 var author$project$Main$view = function (model) {
 	var _n0 = model;
 	var textJson = _n0.textJson;
