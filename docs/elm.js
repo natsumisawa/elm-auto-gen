@@ -4351,12 +4351,12 @@ var author$project$Main$Model = F3(
 	function (textJson, textFormList, errorMessageMaybe) {
 		return {errorMessageMaybe: errorMessageMaybe, textFormList: textFormList, textJson: textJson};
 	});
-var author$project$Main$TextForm = F3(
-	function (text, index, parentIndexMaybe) {
-		return {index: index, parentIndexMaybe: parentIndexMaybe, text: text};
+var author$project$Main$TextForm = F4(
+	function (text, index, hasChild, parentIndexMaybe) {
+		return {hasChild: hasChild, index: index, parentIndexMaybe: parentIndexMaybe, text: text};
 	});
-var elm$core$Maybe$Nothing = {$: 'Nothing'};
 var elm$core$Basics$False = {$: 'False'};
+var elm$core$Maybe$Nothing = {$: 'Nothing'};
 var elm$core$Basics$True = {$: 'True'};
 var elm$core$Result$isOk = function (result) {
 	if (result.$ === 'Ok') {
@@ -4839,7 +4839,7 @@ var author$project$Main$init = function (_n0) {
 			'',
 			_List_fromArray(
 				[
-					A3(author$project$Main$TextForm, '', 0, elm$core$Maybe$Nothing)
+					A4(author$project$Main$TextForm, '', 0, false, elm$core$Maybe$Nothing)
 				]),
 			elm$core$Maybe$Nothing),
 		elm$core$Platform$Cmd$none);
@@ -5157,18 +5157,22 @@ var elm$core$String$replace = F3(
 			after,
 			A2(elm$core$String$split, before, string));
 	});
-var author$project$Main$convertToJson = function (textList) {
+var author$project$Main$convertToJsonObj = function (textFormList) {
 	var jsonObjList = A2(
 		elm$core$List$map,
-		function (text) {
-			return '\t\"' + (text + '\" -> ???.asJson,\n');
+		function (form) {
+			return form.hasChild ? ('\t\"' + (form.text + '\" -> Json.obj(\n')) : ('\t\"' + (form.text + '\" -> ???.asJson),\n'));
 		},
-		textList);
+		textFormList);
 	return A3(
 		elm$core$String$replace,
-		',\n)',
-		'\n)',
-		'Json.obj(\n' + (elm$core$String$concat(jsonObjList) + ')'));
+		'),',
+		',',
+		A3(
+			elm$core$String$replace,
+			'),\n)',
+			'\n\t)\n)',
+			'Json.obj(\n' + (elm$core$String$concat(jsonObjList) + ')')));
 };
 var elm$core$Result$andThen = F2(
 	function (callback, result) {
@@ -5210,23 +5214,15 @@ var arowM$elm_form_decoder$Form$Decoder$assert = F2(
 			});
 	});
 var arowM$elm_form_decoder$Form$Decoder$identity = arowM$elm_form_decoder$Form$Decoder$custom(elm$core$Result$Ok);
-var elm$core$String$length = _String_length;
-var arowM$elm_form_decoder$Form$Decoder$minLength = F2(
-	function (err, bound) {
-		return arowM$elm_form_decoder$Form$Decoder$custom(
-			function (str) {
-				return (_Utils_cmp(
-					elm$core$String$length(str),
-					bound) > -1) ? elm$core$Result$Ok(_Utils_Tuple0) : elm$core$Result$Err(
-					_List_fromArray(
-						[err]));
-			});
-	});
 var author$project$Main$TextEmpty = {$: 'TextEmpty'};
-var author$project$Main$decoder = A2(
-	arowM$elm_form_decoder$Form$Decoder$assert,
-	A2(arowM$elm_form_decoder$Form$Decoder$minLength, author$project$Main$TextEmpty, 1),
-	arowM$elm_form_decoder$Form$Decoder$identity);
+var elm$core$String$length = _String_length;
+var author$project$Main$minLengthValidator = arowM$elm_form_decoder$Form$Decoder$custom(
+	function (textForm) {
+		return (elm$core$String$length(textForm.text) > 0) ? elm$core$Result$Ok(_Utils_Tuple0) : elm$core$Result$Err(
+			_List_fromArray(
+				[author$project$Main$TextEmpty]));
+	});
+var author$project$Main$decoder = A2(arowM$elm_form_decoder$Form$Decoder$assert, author$project$Main$minLengthValidator, arowM$elm_form_decoder$Form$Decoder$identity);
 var elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -5493,21 +5489,15 @@ var author$project$Main$update = F2(
 				var _n3 = A2(
 					arowM$elm_form_decoder$Form$Decoder$run,
 					arowM$elm_form_decoder$Form$Decoder$array(author$project$Main$decoder),
-					elm$core$Array$fromList(
-						A2(
-							elm$core$List$map,
-							function (tf) {
-								return tf.text;
-							},
-							textFormList)));
+					elm$core$Array$fromList(textFormList));
 				if (_n3.$ === 'Ok') {
-					var textList = _n3.a;
+					var tfl = _n3.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
-								textJson: author$project$Main$convertToJson(
-									elm$core$Array$toList(textList))
+								textJson: author$project$Main$convertToJsonObj(
+									elm$core$Array$toList(tfl))
 							}),
 						elm$core$Platform$Cmd$none);
 				} else {
@@ -5531,28 +5521,42 @@ var author$project$Main$update = F2(
 								textFormList,
 								_List_fromArray(
 									[
-										A3(author$project$Main$TextForm, '', nextIndex, elm$core$Maybe$Nothing)
+										A4(author$project$Main$TextForm, '', nextIndex, false, elm$core$Maybe$Nothing)
 									]))
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
-				var nextIndex = msg.a;
-				var parentIndex = msg.b;
+				var parentForm = msg.a;
+				var settedFormList = function () {
+					var _n4 = parentForm.parentIndexMaybe;
+					if (_n4.$ === 'Just') {
+						var parentIndex = _n4.a;
+						return textFormList;
+					} else {
+						return A3(
+							elm_community$list_extra$List$Extra$setAt,
+							parentForm.index,
+							_Utils_update(
+								parentForm,
+								{hasChild: true}),
+							textFormList);
+					}
+				}();
+				var newForm = A4(
+					author$project$Main$TextForm,
+					'',
+					parentForm.index + 1,
+					false,
+					elm$core$Maybe$Just(parentForm.index));
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
 							textFormList: A2(
 								elm$core$List$append,
-								textFormList,
+								settedFormList,
 								_List_fromArray(
-									[
-										A3(
-										author$project$Main$TextForm,
-										'',
-										nextIndex,
-										elm$core$Maybe$Just(parentIndex))
-									]))
+									[newForm]))
 						}),
 					elm$core$Platform$Cmd$none);
 		}
@@ -11457,17 +11461,17 @@ var author$project$Main$convertButtonView = A2(
 	_List_fromArray(
 		[
 			mdgriffith$elm_ui$Element$Background$color(
-			A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255)),
+			A3(mdgriffith$elm_ui$Element$rgb255, 244, 164, 96)),
 			mdgriffith$elm_ui$Element$padding(5),
 			mdgriffith$elm_ui$Element$focused(
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$Background$color(
-					A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255))
+					A3(mdgriffith$elm_ui$Element$rgb255, 0, 0, 0))
 				]))
 		]),
 	{
-		label: mdgriffith$elm_ui$Element$text('Convert'),
+		label: mdgriffith$elm_ui$Element$text('Convert!'),
 		onPress: elm$core$Maybe$Just(author$project$Main$ConvertText)
 	});
 var mdgriffith$elm_ui$Element$el = F2(
@@ -11538,47 +11542,45 @@ var author$project$Main$addButtonView = function (nextIndex) {
 		_List_fromArray(
 			[
 				mdgriffith$elm_ui$Element$Background$color(
-				A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255)),
+				A3(mdgriffith$elm_ui$Element$rgb255, 245, 255, 250)),
 				mdgriffith$elm_ui$Element$padding(5),
 				mdgriffith$elm_ui$Element$focused(
 				_List_fromArray(
 					[
 						mdgriffith$elm_ui$Element$Background$color(
-						A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255))
+						A3(mdgriffith$elm_ui$Element$rgb255, 0, 0, 0))
 					]))
 			]),
 		{
-			label: mdgriffith$elm_ui$Element$text('AddInput'),
+			label: mdgriffith$elm_ui$Element$text('Add!'),
 			onPress: elm$core$Maybe$Just(
 				author$project$Main$AddInput(nextIndex))
 		});
 };
-var author$project$Main$AddNestedInput = F2(
-	function (a, b) {
-		return {$: 'AddNestedInput', a: a, b: b};
-	});
-var author$project$Main$addNestedButtonView = F2(
-	function (nextIndex, parentIndex) {
-		return A2(
-			mdgriffith$elm_ui$Element$Input$button,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$Background$color(
-					A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255)),
-					mdgriffith$elm_ui$Element$padding(5),
-					mdgriffith$elm_ui$Element$focused(
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$Background$color(
-							A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255))
-						]))
-				]),
-			{
-				label: mdgriffith$elm_ui$Element$text('AddNestedInput'),
-				onPress: elm$core$Maybe$Just(
-					A2(author$project$Main$AddNestedInput, nextIndex, parentIndex))
-			});
-	});
+var author$project$Main$AddNestedInput = function (a) {
+	return {$: 'AddNestedInput', a: a};
+};
+var author$project$Main$addNestedButtonView = function (parentForm) {
+	return A2(
+		mdgriffith$elm_ui$Element$Input$button,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$Background$color(
+				A3(mdgriffith$elm_ui$Element$rgb255, 245, 255, 250)),
+				mdgriffith$elm_ui$Element$padding(5),
+				mdgriffith$elm_ui$Element$focused(
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$Background$color(
+						A3(mdgriffith$elm_ui$Element$rgb255, 0, 0, 0))
+					]))
+			]),
+		{
+			label: mdgriffith$elm_ui$Element$text('AddNest!'),
+			onPress: elm$core$Maybe$Just(
+				author$project$Main$AddNestedInput(parentForm))
+		});
+};
 var author$project$Main$ChangeText = F2(
 	function (a, b) {
 		return {$: 'ChangeText', a: a, b: b};
@@ -12839,7 +12841,7 @@ var author$project$Main$inputTableView = function (textFormList) {
 														mdgriffith$elm_ui$Element$el,
 														_List_fromArray(
 															[mdgriffith$elm_ui$Element$centerX]),
-														A2(author$project$Main$addNestedButtonView, index + 1, parentIndex))
+														author$project$Main$addNestedButtonView(textForm))
 													]);
 											} else {
 												return _List_fromArray(
@@ -12848,7 +12850,7 @@ var author$project$Main$inputTableView = function (textFormList) {
 														mdgriffith$elm_ui$Element$el,
 														_List_fromArray(
 															[mdgriffith$elm_ui$Element$centerX]),
-														A2(author$project$Main$addNestedButtonView, index + 1, index)),
+														author$project$Main$addNestedButtonView(textForm)),
 														A2(
 														mdgriffith$elm_ui$Element$el,
 														_List_fromArray(
