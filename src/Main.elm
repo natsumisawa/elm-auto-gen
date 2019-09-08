@@ -28,7 +28,7 @@ main =
 
 type alias Model =
     { textJson : String
-    , textForm : List String
+    , textFormList : List String
     , errorMessageMaybe : Maybe String
     }
 
@@ -53,15 +53,15 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        { textJson, textForm } =
+        { textJson, textFormList } =
             model
     in
     case msg of
         ChangeText input index ->
-            ( { model | textForm = ListExtra.setAt index input textForm }, Cmd.none )
+            ( { model | textFormList = ListExtra.setAt index input textFormList }, Cmd.none )
 
         ConvertText ->
-            case Decoder.run (Decoder.array decoder) <| Array.fromList textForm of
+            case Decoder.run (Decoder.array decoder) <| Array.fromList textFormList of
                 Ok textList ->
                     ( { model | textJson = convertToJson <| Array.toList textList }, Cmd.none )
 
@@ -69,7 +69,7 @@ update msg model =
                     ( { model | errorMessageMaybe = toErrorMessage err }, Cmd.none )
 
         AddInput index ->
-            ( { model | textForm = List.append textForm [ "" ] }, Cmd.none )
+            ( { model | textFormList = List.append textFormList [ "" ] }, Cmd.none )
 
 
 type Error
@@ -111,52 +111,38 @@ decoder =
 view : Model -> Html Msg
 view model =
     let
-        { textJson, textForm, errorMessageMaybe } =
+        { textJson, textFormList, errorMessageMaybe } =
             model
     in
     Element.layout [] <|
         Element.column
             []
         <|
-            [ Element.table [ padding 10, spacing 30 ]
-                { data = [ model ]
+            [ Element.indexedTable [ padding 10, spacing 30 ]
+                { data = textFormList
                 , columns =
                     [ { header = Element.text ""
                       , width = px 300
                       , view =
-                            \m ->
+                            \index textForm ->
                                 Element.column [ spacing 10 ] <|
-                                    List.append
-                                        (List.indexedMap
-                                            (\index textFormElement ->
-                                                Element.Input.text
-                                                    [ width <| px 100
-                                                    , htmlAttribute <| Html.Attributes.autofocus True
-                                                    ]
-                                                    { onChange = \i -> ChangeText i index
-                                                    , text = textFormElement
-                                                    , placeholder = Nothing
-                                                    , label = Element.Input.labelHidden "text"
-                                                    }
-                                            )
-                                            textForm
-                                        )
-                                        (case errorMessageMaybe of
-                                            Just em ->
-                                                [ Element.el [ Font.color (Element.rgb 255 0 0), Font.size 12 ] (Element.text em) ]
-
-                                            Nothing ->
-                                                []
-                                        )
+                                    [ inputView textForm
+                                        index
+                                    , errorMessageView errorMessageMaybe
+                                    ]
                       }
                     , { header = Element.text "Json"
                       , width = px 300
                       , view =
-                            \m ->
-                                Element.column [ spacing 10 ]
-                                    [ Element.text
-                                        textJson
-                                    ]
+                            \index textForm ->
+                                if index == 0 then
+                                    Element.column [ spacing 10 ]
+                                        [ Element.text
+                                            textJson
+                                        ]
+
+                                else
+                                    Element.none
                       }
                     ]
                 }
@@ -167,7 +153,7 @@ view model =
                     , Element.focused
                         [ Background.color <| Element.rgb255 102 102 255 ]
                     ]
-                    { onPress = Just <| AddInput (List.length textForm + 1)
+                    { onPress = Just <| AddInput (List.length textFormList + 1)
                     , label = Element.text "AddInput"
                     }
             , el [ centerX ] <|
@@ -181,3 +167,26 @@ view model =
                     , label = Element.text "Convert"
                     }
             ]
+
+
+inputView : String -> Int -> Element Msg
+inputView textForm index =
+    Element.Input.text
+        [ width <| px 100
+        , htmlAttribute <| Html.Attributes.autofocus True
+        ]
+        { onChange = \i -> ChangeText i index
+        , text = textForm
+        , placeholder = Nothing
+        , label = Element.Input.labelHidden "text"
+        }
+
+
+errorMessageView : Maybe String -> Element Msg
+errorMessageView errorMessageMaybe =
+    case errorMessageMaybe of
+        Just em ->
+            Element.el [ Font.color (Element.rgb 255 0 0), Font.size 12 ] (Element.text em)
+
+        Nothing ->
+            Element.none
