@@ -5144,14 +5144,25 @@ var elm$core$List$map = F2(
 var elm$core$String$concat = function (strings) {
 	return A2(elm$core$String$join, '', strings);
 };
+var elm$core$String$replace = F3(
+	function (before, after, string) {
+		return A2(
+			elm$core$String$join,
+			after,
+			A2(elm$core$String$split, before, string));
+	});
 var author$project$Main$convertToJson = function (textList) {
 	var jsonObjList = A2(
 		elm$core$List$map,
 		function (text) {
-			return '\"' + (text + '\" -> ???.asJson,');
+			return '\t\"' + (text + '\" -> ???.asJson,\n');
 		},
 		textList);
-	return 'Json.obj(\n\t' + (elm$core$String$concat(jsonObjList) + '\n)');
+	return A3(
+		elm$core$String$replace,
+		',\n)',
+		'\n)',
+		'Json.obj(\n' + (elm$core$String$concat(jsonObjList) + ')'));
 };
 var elm$core$Result$andThen = F2(
 	function (callback, result) {
@@ -5486,6 +5497,9 @@ var author$project$Main$update = F2(
 					elm$core$Platform$Cmd$none);
 		}
 	});
+var author$project$Main$AddInput = function (a) {
+	return {$: 'AddInput', a: a};
+};
 var author$project$Main$ChangeText = F2(
 	function (a, b) {
 		return {$: 'ChangeText', a: a, b: b};
@@ -12961,6 +12975,30 @@ var author$project$Main$view = function (model) {
 						data: _List_fromArray(
 							[model])
 					}),
+					A2(
+					mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[mdgriffith$elm_ui$Element$centerX]),
+					A2(
+						mdgriffith$elm_ui$Element$Input$button,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$Background$color(
+								A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255)),
+								mdgriffith$elm_ui$Element$padding(5),
+								mdgriffith$elm_ui$Element$focused(
+								_List_fromArray(
+									[
+										mdgriffith$elm_ui$Element$Background$color(
+										A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255))
+									]))
+							]),
+						{
+							label: mdgriffith$elm_ui$Element$text('AddInput'),
+							onPress: elm$core$Maybe$Just(
+								author$project$Main$AddInput(
+									elm$core$List$length(textForm) + 1))
+						})),
 					A2(
 					mdgriffith$elm_ui$Element$el,
 					_List_fromArray(

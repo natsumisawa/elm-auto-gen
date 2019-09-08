@@ -82,11 +82,11 @@ convertToJson textList =
         jsonObjList =
             List.map
                 (\text ->
-                    "\"" ++ text ++ "\" -> ???.asJson,"
+                    "\t\"" ++ text ++ "\" -> ???.asJson,\n"
                 )
                 textList
     in
-    "Json.obj(\n\t" ++ String.concat jsonObjList ++ "\n)"
+    String.replace ",\n)" "\n)" ("Json.obj(\n" ++ String.concat jsonObjList ++ ")")
 
 
 toErrorMessage : List Error -> Maybe String
@@ -160,6 +160,16 @@ view model =
                       }
                     ]
                 }
+            , el [ centerX ] <|
+                Element.Input.button
+                    [ Background.color <| Element.rgb255 102 102 255
+                    , padding 5
+                    , Element.focused
+                        [ Background.color <| Element.rgb255 102 102 255 ]
+                    ]
+                    { onPress = Just <| AddInput (List.length textForm + 1)
+                    , label = Element.text "AddInput"
+                    }
             , el [ centerX ] <|
                 Element.Input.button
                     [ Background.color <| Element.rgb255 102 102 255
