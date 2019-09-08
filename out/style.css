@@ -1,0 +1,28 @@
+body {
+  padding: 10px; }
+
+header h1 {
+  font-size: 2rem; }
+
+button {
+  display: block;
+  font-size: 1em;
+  background: #5590DD;
+  color: #fff;
+  margin-bottom: 16px;
+  font-weight: 300;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer; }
+
+main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center; }
+  main article {
+    margin-top: 1em; }
+    main article button {
+      width: 8em;
+      height: 2em; }
