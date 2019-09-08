@@ -4351,6 +4351,10 @@ var author$project$Main$Model = F3(
 	function (textJson, textFormList, errorMessageMaybe) {
 		return {errorMessageMaybe: errorMessageMaybe, textFormList: textFormList, textJson: textJson};
 	});
+var author$project$Main$TextForm = F3(
+	function (text, index, parentIndexMaybe) {
+		return {index: index, parentIndexMaybe: parentIndexMaybe, text: text};
+	});
 var elm$core$Maybe$Nothing = {$: 'Nothing'};
 var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$True = {$: 'True'};
@@ -4834,7 +4838,9 @@ var author$project$Main$init = function (_n0) {
 			author$project$Main$Model,
 			'',
 			_List_fromArray(
-				['']),
+				[
+					A3(author$project$Main$TextForm, '', 0, elm$core$Maybe$Nothing)
+				]),
 			elm$core$Maybe$Nothing),
 		elm$core$Platform$Cmd$none);
 };
@@ -5262,10 +5268,6 @@ var elm$core$List$append = F2(
 			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
 		}
 	});
-var elm$core$Basics$always = F2(
-	function (a, _n0) {
-		return a;
-	});
 var elm$core$List$drop = F2(
 	function (n, list) {
 		drop:
@@ -5286,6 +5288,24 @@ var elm$core$List$drop = F2(
 				}
 			}
 		}
+	});
+var elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return elm$core$Maybe$Just(x);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var elm_community$list_extra$List$Extra$getAt = F2(
+	function (idx, xs) {
+		return (idx < 0) ? elm$core$Maybe$Nothing : elm$core$List$head(
+			A2(elm$core$List$drop, idx, xs));
+	});
+var elm$core$Basics$always = F2(
+	function (a, _n0) {
+		return a;
 	});
 var elm$core$List$takeReverse = F3(
 	function (n, list, kept) {
@@ -5450,20 +5470,38 @@ var author$project$Main$update = F2(
 			case 'ChangeText':
 				var input = msg.a;
 				var index = msg.b;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							textFormList: A3(elm_community$list_extra$List$Extra$setAt, index, input, textFormList)
-						}),
-					elm$core$Platform$Cmd$none);
+				var changeTextFormMaybe = A2(elm_community$list_extra$List$Extra$getAt, index, textFormList);
+				if (changeTextFormMaybe.$ === 'Just') {
+					var ctf = changeTextFormMaybe.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								textFormList: A3(
+									elm_community$list_extra$List$Extra$setAt,
+									index,
+									_Utils_update(
+										ctf,
+										{text: input}),
+									textFormList)
+							}),
+						elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				}
 			case 'ConvertText':
-				var _n2 = A2(
+				var _n3 = A2(
 					arowM$elm_form_decoder$Form$Decoder$run,
 					arowM$elm_form_decoder$Form$Decoder$array(author$project$Main$decoder),
-					elm$core$Array$fromList(textFormList));
-				if (_n2.$ === 'Ok') {
-					var textList = _n2.a;
+					elm$core$Array$fromList(
+						A2(
+							elm$core$List$map,
+							function (tf) {
+								return tf.text;
+							},
+							textFormList)));
+				if (_n3.$ === 'Ok') {
+					var textList = _n3.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -5473,7 +5511,7 @@ var author$project$Main$update = F2(
 							}),
 						elm$core$Platform$Cmd$none);
 				} else {
-					var err = _n2.a;
+					var err = _n3.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -5482,8 +5520,8 @@ var author$project$Main$update = F2(
 							}),
 						elm$core$Platform$Cmd$none);
 				}
-			default:
-				var index = msg.a;
+			case 'AddInput':
+				var nextIndex = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -5492,14 +5530,30 @@ var author$project$Main$update = F2(
 								elm$core$List$append,
 								textFormList,
 								_List_fromArray(
-									['']))
+									[
+										A3(author$project$Main$TextForm, '', nextIndex, elm$core$Maybe$Nothing)
+									]))
+						}),
+					elm$core$Platform$Cmd$none);
+			default:
+				var nextIndex = msg.a;
+				var parentIndexMaybe = msg.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							textFormList: A2(
+								elm$core$List$append,
+								textFormList,
+								_List_fromArray(
+									[
+										A3(author$project$Main$TextForm, '', nextIndex, parentIndexMaybe)
+									]))
 						}),
 					elm$core$Platform$Cmd$none);
 		}
 	});
-var author$project$Main$AddInput = function (a) {
-	return {$: 'AddInput', a: a};
-};
+var author$project$Main$ConvertText = {$: 'ConvertText'};
 var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
 	return {$: 'Flag', a: a};
 };
@@ -11394,28 +11448,6 @@ var mdgriffith$elm_ui$Element$Input$button = F2(
 				_List_fromArray(
 					[label])));
 	});
-var author$project$Main$addButtonView = function (nextIndex) {
-	return A2(
-		mdgriffith$elm_ui$Element$Input$button,
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$Background$color(
-				A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255)),
-				mdgriffith$elm_ui$Element$padding(5),
-				mdgriffith$elm_ui$Element$focused(
-				_List_fromArray(
-					[
-						mdgriffith$elm_ui$Element$Background$color(
-						A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255))
-					]))
-			]),
-		{
-			label: mdgriffith$elm_ui$Element$text('AddInput'),
-			onPress: elm$core$Maybe$Just(
-				author$project$Main$AddInput(nextIndex))
-		});
-};
-var author$project$Main$ConvertText = {$: 'ConvertText'};
 var author$project$Main$convertButtonView = A2(
 	mdgriffith$elm_ui$Element$Input$button,
 	_List_fromArray(
@@ -11493,6 +11525,56 @@ var author$project$Main$errorMessageView = function (errorMessageMaybe) {
 		return mdgriffith$elm_ui$Element$none;
 	}
 };
+var author$project$Main$AddInput = function (a) {
+	return {$: 'AddInput', a: a};
+};
+var author$project$Main$addButtonView = function (nextIndex) {
+	return A2(
+		mdgriffith$elm_ui$Element$Input$button,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$Background$color(
+				A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255)),
+				mdgriffith$elm_ui$Element$padding(5),
+				mdgriffith$elm_ui$Element$focused(
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$Background$color(
+						A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255))
+					]))
+			]),
+		{
+			label: mdgriffith$elm_ui$Element$text('AddInput'),
+			onPress: elm$core$Maybe$Just(
+				author$project$Main$AddInput(nextIndex))
+		});
+};
+var author$project$Main$AddNestedInput = F2(
+	function (a, b) {
+		return {$: 'AddNestedInput', a: a, b: b};
+	});
+var author$project$Main$addNestedButtonView = F2(
+	function (nextIndex, parentIndexMaybe) {
+		return A2(
+			mdgriffith$elm_ui$Element$Input$button,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$Background$color(
+					A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255)),
+					mdgriffith$elm_ui$Element$padding(5),
+					mdgriffith$elm_ui$Element$focused(
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$Background$color(
+							A3(mdgriffith$elm_ui$Element$rgb255, 102, 102, 255))
+						]))
+				]),
+			{
+				label: mdgriffith$elm_ui$Element$text('AddNestedInput'),
+				onPress: elm$core$Maybe$Just(
+					A2(author$project$Main$AddNestedInput, nextIndex, parentIndexMaybe))
+			});
+	});
 var author$project$Main$ChangeText = F2(
 	function (a, b) {
 		return {$: 'ChangeText', a: a, b: b};
@@ -11509,15 +11591,6 @@ var mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
 var mdgriffith$elm_ui$Element$Input$labelHidden = mdgriffith$elm_ui$Element$Input$HiddenLabel;
 var mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
 	return {$: 'TextInputNode', a: a};
-};
-var elm$core$List$head = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return elm$core$Maybe$Just(x);
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
 };
 var elm$html$Html$span = _VirtualDom_node('span');
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
@@ -12437,7 +12510,7 @@ var mdgriffith$elm_ui$Element$Input$text = mdgriffith$elm_ui$Element$Input$textH
 		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('text')
 	});
 var author$project$Main$inputView = F2(
-	function (textForm, index) {
+	function (text, index) {
 		return A2(
 			mdgriffith$elm_ui$Element$Input$text,
 			_List_fromArray(
@@ -12453,26 +12526,8 @@ var author$project$Main$inputView = F2(
 					return A2(author$project$Main$ChangeText, i, index);
 				},
 				placeholder: elm$core$Maybe$Nothing,
-				text: textForm
+				text: text
 			});
-	});
-var mdgriffith$elm_ui$Element$column = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asColumn,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentTop + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentLeft)),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
 var mdgriffith$elm_ui$Element$InternalIndexedColumn = function (a) {
 	return {$: 'InternalIndexedColumn', a: a};
@@ -12698,6 +12753,24 @@ var mdgriffith$elm_ui$Element$indexedTable = F2(
 				data: config.data
 			});
 	});
+var mdgriffith$elm_ui$Element$row = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asRow,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
 var author$project$Main$inputTableView = function (textFormList) {
 	return A2(
 		mdgriffith$elm_ui$Element$indexedTable,
@@ -12714,15 +12787,21 @@ var author$project$Main$inputTableView = function (textFormList) {
 					view: F2(
 						function (index, textForm) {
 							return A2(
-								mdgriffith$elm_ui$Element$column,
+								mdgriffith$elm_ui$Element$row,
 								_List_fromArray(
 									[
 										mdgriffith$elm_ui$Element$spacing(10)
 									]),
-								_List_fromArray(
-									[
-										A2(author$project$Main$inputView, textForm, index)
-									]));
+								A2(
+									elm$core$List$cons,
+									A2(author$project$Main$inputView, textForm.text, index),
+									_Utils_eq(
+										elm$core$List$length(textFormList),
+										index + 1) ? _List_fromArray(
+										[
+											A2(author$project$Main$addNestedButtonView, index + 1, textForm.parentIndexMaybe),
+											author$project$Main$addButtonView(index + 1)
+										]) : _List_Nil));
 						}),
 					width: mdgriffith$elm_ui$Element$px(300)
 				}
@@ -12732,6 +12811,24 @@ var author$project$Main$inputTableView = function (textFormList) {
 };
 var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
 var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
+var mdgriffith$elm_ui$Element$column = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asColumn,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentTop + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentLeft)),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
 var mdgriffith$elm_ui$Internal$Model$OnlyDynamic = F2(
 	function (a, b) {
 		return {$: 'OnlyDynamic', a: a, b: b};
@@ -12984,24 +13081,6 @@ var mdgriffith$elm_ui$Element$layoutWith = F3(
 	});
 var mdgriffith$elm_ui$Element$layout = mdgriffith$elm_ui$Element$layoutWith(
 	{options: _List_Nil});
-var mdgriffith$elm_ui$Element$row = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asRow,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
 var author$project$Main$view = function (model) {
 	var _n0 = model;
 	var textJson = _n0.textJson;
@@ -13039,8 +13118,6 @@ var author$project$Main$view = function (model) {
 									_List_fromArray(
 										[
 											author$project$Main$inputTableView(textFormList),
-											author$project$Main$addButtonView(
-											elm$core$List$length(textFormList) + 1),
 											author$project$Main$errorMessageView(errorMessageMaybe)
 										]))),
 								A2(

@@ -28,14 +28,21 @@ main =
 
 type alias Model =
     { textJson : String
-    , textFormList : List String
+    , textFormList : List TextForm
     , errorMessageMaybe : Maybe String
+    }
+
+
+type alias TextForm =
+    { text : String
+    , index : Int
+    , parentIndexMaybe : Maybe Int
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model "" [ "" ] Nothing
+    ( Model "" [ TextForm "" 0 Nothing ] Nothing
     , Cmd.none
     )
 
@@ -48,6 +55,7 @@ type Msg
     = ChangeText String Int
     | ConvertText
     | AddInput Int
+    | AddNestedInput Int (Maybe Int)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -58,18 +66,30 @@ update msg model =
     in
     case msg of
         ChangeText input index ->
-            ( { model | textFormList = ListExtra.setAt index input textFormList }, Cmd.none )
+            let
+                changeTextFormMaybe =
+                    ListExtra.getAt index textFormList
+            in
+            case changeTextFormMaybe of
+                Just ctf ->
+                    ( { model | textFormList = ListExtra.setAt index { ctf | text = input } textFormList }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         ConvertText ->
-            case Decoder.run (Decoder.array decoder) <| Array.fromList textFormList of
+            case Decoder.run (Decoder.array decoder) <| Array.fromList <| List.map (\tf -> tf.text) textFormList of
                 Ok textList ->
                     ( { model | textJson = convertToJson <| Array.toList textList }, Cmd.none )
 
                 Err err ->
                     ( { model | errorMessageMaybe = toErrorMessage err }, Cmd.none )
 
-        AddInput index ->
-            ( { model | textFormList = List.append textFormList [ "" ] }, Cmd.none )
+        AddInput nextIndex ->
+            ( { model | textFormList = List.append textFormList [ TextForm "" nextIndex Nothing ] }, Cmd.none )
+
+        AddNestedInput nextIndex parentIndexMaybe ->
+            ( { model | textFormList = List.append textFormList [ TextForm "" nextIndex parentIndexMaybe ] }, Cmd.none )
 
 
 type Error
@@ -121,7 +141,6 @@ view model =
                     [ el [] <|
                         column [ spacing 10 ]
                             [ inputTableView textFormList
-                            , addButtonView <| List.length textFormList + 1
                             , errorMessageView errorMessageMaybe
                             ]
                     , el [] <|
@@ -132,7 +151,7 @@ view model =
             ]
 
 
-inputTableView : List String -> Element Msg
+inputTableView : List TextForm -> Element Msg
 inputTableView textFormList =
     indexedTable [ padding 10, spacing 30 ]
         { data = textFormList
@@ -141,23 +160,30 @@ inputTableView textFormList =
               , width = px 300
               , view =
                     \index textForm ->
-                        column [ spacing 10 ] <|
-                            [ inputView textForm
+                        row [ spacing 10 ] <|
+                            inputView textForm.text
                                 index
-                            ]
+                                :: (if List.length textFormList == index + 1 then
+                                        [ addNestedButtonView (index + 1) textForm.parentIndexMaybe
+                                        , addButtonView (index + 1)
+                                        ]
+
+                                    else
+                                        []
+                                   )
               }
             ]
         }
 
 
 inputView : String -> Int -> Element Msg
-inputView textForm index =
+inputView text index =
     Element.Input.text
         [ width <| px 100
         , htmlAttribute <| Html.Attributes.autofocus True
         ]
         { onChange = \i -> ChangeText i index
-        , text = textForm
+        , text = text
         , placeholder = Nothing
         , label = Element.Input.labelHidden "text"
         }
@@ -173,6 +199,19 @@ addButtonView nextIndex =
         ]
         { onPress = Just <| AddInput nextIndex
         , label = Element.text "AddInput"
+        }
+
+
+addNestedButtonView : Int -> Maybe Int -> Element Msg
+addNestedButtonView nextIndex parentIndexMaybe =
+    Element.Input.button
+        [ Background.color <| Element.rgb255 102 102 255
+        , padding 5
+        , Element.focused
+            [ Background.color <| Element.rgb255 102 102 255 ]
+        ]
+        { onPress = Just <| AddNestedInput nextIndex parentIndexMaybe
+        , label = Element.text "AddNestedInput"
         }
 
 
